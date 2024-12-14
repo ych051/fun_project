@@ -1,0 +1,150 @@
+import tkinter as tk
+from tkinter import font
+
+def create_scoreboard():
+    def increase_player1(amount):
+        score1.set(score1.get() + amount)
+        check_round_winner()
+
+    def decrease_player1():
+        new_score = score1.get() - 1
+        score1.set(max(0, new_score))
+        check_round_winner()
+
+    def increase_player2(amount):
+        score2.set(score2.get() + amount)
+        check_round_winner()
+
+    def decrease_player2():
+        new_score = score2.get() - 1
+        score2.set(max(0, new_score))
+        check_round_winner()
+
+    def reset_scores():
+        score1.set(0)
+        score2.set(0)
+
+    def reset_wins():
+        player1_wins.set(0)
+        player2_wins.set(0)
+
+    def update_timer():
+        if timer_running[0]:
+            if timer_seconds[0] > 0:
+                timer_seconds[0] -= 1
+                minutes = timer_seconds[0] // 60
+                seconds = timer_seconds[0] % 60
+                timer_var.set(f"{minutes:02}:{seconds:02}")
+                root.after(1000, update_timer)
+            else:
+                timer_running[0] = False
+                timer_button.config(text="Start", bg="#5cb85c")
+
+    def toggle_timer():
+        if not timer_running[0]:
+            timer_running[0] = True
+            timer_button.config(text="Stop", bg="#f0ad4e")
+            update_timer()
+        else:
+            timer_running[0] = False
+            timer_button.config(text="Start", bg="#5cb85c")
+
+    def reset_timer():
+        timer_running[0] = False
+        timer_seconds[0] = 120
+        timer_var.set("02:00")
+        timer_button.config(text="Start", bg="#5cb85c")
+
+    def increase_round():
+        round_var.set(round_var.get() + 1)
+        reset_scores()
+
+    def reset_round():
+        round_var.set(1)
+        reset_scores()
+
+    def check_round_winner():
+        if score1.get() >= 6:
+            player1_wins.set(player1_wins.get() + 1)
+            reset_scores()
+            reset_timer()
+        elif score2.get() >= 6:
+            player2_wins.set(player2_wins.get() + 1)
+            reset_scores()
+            reset_timer()
+
+    root = tk.Tk()
+    root.title("Scoreboard")
+
+    root.geometry("1920x1080")
+    root.configure(bg="#f4f4f9")
+
+    score1 = tk.IntVar(value=0)
+    score2 = tk.IntVar(value=0)
+    timer_var = tk.StringVar(value="02:00")
+    round_var = tk.IntVar(value=1)
+    player1_wins = tk.IntVar(value=0)
+    player2_wins = tk.IntVar(value=0)
+
+    timer_running = [False]
+    timer_seconds = [120]
+
+    title_font = font.Font(size=22, weight="bold")
+    score_font = font.Font(size=150, weight="bold")
+    button_font = font.Font(size=16, weight="bold")
+    wins_font = font.Font(size=48, weight="bold")
+    timer_font = font.Font(size=30, weight="bold")
+
+    frame1 = tk.Frame(root, bg="#007acc", width=640, height=1080)
+    frame1.pack_propagate(False)
+    frame1.pack(side="left", fill="y")
+
+    tk.Label(frame1, text="Player 1", font=title_font, fg="black", bg="#007acc").pack(pady=20)
+    tk.Label(frame1, textvariable=score1, font=score_font, fg="white", bg="#007acc").pack(expand=True)
+
+    button_frame1 = tk.Frame(frame1, bg="#007acc")
+    button_frame1.pack()
+    tk.Button(button_frame1, text="+1", font=button_font, command=lambda: increase_player1(1), bg="#007acc", fg="black", relief="flat", borderwidth=0).pack(pady=5)
+    tk.Button(button_frame1, text="+2", font=button_font, command=lambda: increase_player1(2), bg="#007acc", fg="black", relief="flat", borderwidth=0).pack(pady=5)
+    tk.Button(button_frame1, text="-", font=button_font, command=decrease_player1, bg="#007acc", fg="black", relief="flat", borderwidth=0).pack(pady=5)
+
+    frame2 = tk.Frame(root, bg="#d9534f", width=640, height=1080)
+    frame2.pack_propagate(False)
+    frame2.pack(side="right", fill="y")
+
+    tk.Label(frame2, text="Player 2", font=title_font, fg="black", bg="#d9534f").pack(pady=20)
+    tk.Label(frame2, textvariable=score2, font=score_font, fg="white", bg="#d9534f").pack(expand=True)
+
+    button_frame2 = tk.Frame(frame2, bg="#d9534f")
+    button_frame2.pack()
+    tk.Button(button_frame2, text="+1", font=button_font, command=lambda: increase_player2(1), bg="#d9534f", fg="black", relief="flat", borderwidth=0).pack(pady=5)
+    tk.Button(button_frame2, text="+2", font=button_font, command=lambda: increase_player2(2), bg="#d9534f", fg="black", relief="flat", borderwidth=0).pack(pady=5)
+    tk.Button(button_frame2, text="-", font=button_font, command=decrease_player2, bg="#d9534f", fg="black", relief="flat", borderwidth=0).pack(pady=5)
+
+    center_frame = tk.Frame(root, bg="#f4f4f9", width=640, height=1080)
+    center_frame.pack_propagate(False)
+    center_frame.pack(side="left", fill="y")
+
+    tk.Label(center_frame, text="Timer", font=title_font, fg="#333333", bg="#f4f4f9").pack(pady=20)
+    tk.Label(center_frame, textvariable=timer_var, font=timer_font, fg="#333333", bg="#f4f4f9").pack(pady=20)
+
+    tk.Label(center_frame, text="Wins", font=title_font, fg="#333333", bg="#f4f4f9").pack(pady=20)
+    wins_label = tk.Label(center_frame, text="0 : 0", font=wins_font, fg="#333333", bg="#f4f4f9")
+    wins_label.pack(pady=20)
+
+    def update_wins_label():
+        wins_label.config(text=f"{player1_wins.get()} : {player2_wins.get()}")
+        root.after(100, update_wins_label)
+
+    update_wins_label()
+
+    timer_button = tk.Button(center_frame, text="Start", font=button_font, command=toggle_timer, bg="#5cb85c", fg="black", relief="flat", borderwidth=0)
+    timer_button.pack(pady=10)
+
+    tk.Button(center_frame, text="Reset", font=button_font, command=reset_timer, bg="#d9534f", fg="black", relief="flat", borderwidth=0).pack(pady=10)
+    tk.Button(center_frame, text="Reset Wins", font=button_font, command=reset_wins, bg="#d9534f", fg="black", relief="flat", borderwidth=0).pack(pady=10)
+
+    root.mainloop()
+
+if __name__ == "__main__":
+    create_scoreboard()
