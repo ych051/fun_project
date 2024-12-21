@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>조 추첨 프로그램</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #74ebd5, #acb6e5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 500px;
+            transition: transform 0.3s ease;
+        }
+        h1 {
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        input, button {
+            padding: 12px;
+            width: 85%;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 500;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #5a67d8, #6b46c1);
+        }
+        #result {
+            margin-top: 30px;
+            padding: 30px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(236, 239, 244, 0.8);
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #333;
+        }
+        .hidden {
+            display: none;
+        }
+        #finalResult {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f4f4f9;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 1.2em;
+            text-align: left;
+            line-height: 1.8;
+        }
+        #finalResult h2 {
+            color: #5a67d8;
+            margin-bottom: 10px;
+        }
+        #finalResult p {
+            margin: 0 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="setupContainer">
+        <h1>조 추첨 설정</h1>
+        <div class="input-group">
+            <label for="totalPeople">전체 인원 수</label>
+            <input type="number" id="totalPeople" min="1">
+        </div>
+        <div class="input-group">
+            <label for="numGroups">조의 수</label>
+            <input type="number" id="numGroups" min="1">
+        </div>
+        <button onclick="nextPage()">다음</button>
+    </div>
+
+    <div class="container hidden" id="groupSetupContainer">
+        <h1>조별 인원 설정</h1>
+        <div id="groupInputs"></div>
+        <button onclick="startDraw()">추첨 준비</button>
+    </div>
+
+    <div class="container hidden" id="drawContainer">
+        <h1>조 추첨 결과</h1>
+        <div id="result"></div>
+    </div>
+
+    <div class="container hidden" id="resultContainer">
+        <h1>최종 조별 결과</h1>
+        <div id="finalResult"></div>
+    </div>
+
+    <script>
+        let people = [], teams = [], results = [], currentIndex = 0;
+
+        function nextPage() {
+            const totalPeople = parseInt(document.getElementById('totalPeople').value) || 0;
+            const numGroups = parseInt(document.getElementById('numGroups').value) || 0;
+
+            if (totalPeople < 1 || numGroups < 1) {
+                alert('전체 인원 수와 조의 수를 1 이상으로 입력하세요.');
+                return;
+            }
+
+            generateGroupInputs(numGroups);
+            document.getElementById('setupContainer').classList.add('hidden');
+            document.getElementById('groupSetupContainer').classList.remove('hidden');
+        }
+
+        function generateGroupInputs(numGroups) {
+            const container = document.getElementById('groupInputs');
+            container.innerHTML = '';
+
+            for (let i = 0; i < numGroups; i++) {
+                container.innerHTML += `<div class="input-group">
+                    <label>${i + 1}조 인원 수</label>
+                    <input type="number" class="groupSize" min="0">
+                </div>`;
+            }
+        }
+
+        function startDraw() {
+            const totalPeople = parseInt(document.getElementById('totalPeople').value) || 0;
+            const numGroups = parseInt(document.getElementById('numGroups').value) || 0;
+            const groupSizes = Array.from(document.querySelectorAll('.groupSize'))
+                                    .map(input => parseInt(input.value) || 0);
+
+            if (groupSizes.every(size => size === 0)) {
+                groupSizes.fill(Math.floor(totalPeople / numGroups));
+                for (let i = 0; i < totalPeople % numGroups; i++) groupSizes[i]++;
+            }
+
+            people = Array.from({ length: totalPeople }, (_, i) => i + 1);
+            teams = groupSizes.flatMap((size, index) => Array(size).fill(index + 1));
+
+            shuffle(teams);
+            currentIndex = 0;
+            results = [];
+
+            document.getElementById('groupSetupContainer').classList.add('hidden');
+            document.getElementById('drawContainer').classList.remove('hidden');
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        function handleKeyPress(event) {
+            if (event.code === 'Space') drawNext();
+        }
+
+        function resetListener(event) {
+            if (event.code === 'Escape') resetAll();
+        }
+
+        function drawNext() {
+            if (currentIndex < people.length) {
+                document.getElementById('result').innerHTML = `${people[currentIndex]}번 - ${teams[currentIndex]}조`;
+                results.push(`${people[currentIndex]} - ${teams[currentIndex]}`);
+                currentIndex++;
+            } else {
+                showSummary();
+                document.removeEventListener('keydown', handleKeyPress);
+            }
+        }
+
+        function showSummary() {
+            document.getElementById('drawContainer').classList.add('hidden');
+            document.getElementById('resultContainer').classList.remove('hidden');
+            const summary = results.reduce((acc, res) => {
+                const [person, group] = res.split(" - ");
+                acc[group] = acc[group] || [];
+                acc[group].push(person);
+                return acc;
+            }, {});
+            
+            document.getElementById('finalResult').innerHTML = Object.entries(summary)
+                .map(([group, members]) => `<h2>${group}조</h2><p>${members.join(', ')}번</p>`)
+                .join('');
+
+            document.addEventListener('keydown', resetListener);
+        }
+
+        function resetAll() {
+            location.reload();
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+    </script>
+</body>
+</html>
